@@ -1,0 +1,1 @@
+public enum SpellType { None, Fire, Water, Earth, Lightning }
