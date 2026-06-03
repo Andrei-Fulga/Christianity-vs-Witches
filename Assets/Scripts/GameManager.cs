@@ -1,79 +1,36 @@
 using UnityEngine;
-using UnityEngine.UI;
 
 public class GameManager : MonoBehaviour
 {
-    public static GameManager Instance;
-
-    [Header("UI Elements")]
-    public GameObject cardMenuPanel;
-    public Image playerHealthUI;
-    public Image witchHealthUI;
-    public Sprite[] healthBarSprites; // Assign 7 sprites (0 to 6)
-
-    [Header("Animators")]
-    public Animator playerAnim;
-    public Animator witchAnim;
-
-    [Header("Game State")]
     public int playerHealth = 6;
     public int witchHealth = 6;
-    public SpellType activePlayerDefense = SpellType.None;
-    public bool gameActive = true;
 
-    void Awake() { Instance = this; }
+    public Sprite[] healthBarImages; 
+    
+    // CHANGED to SpriteRenderer to perfectly match your project setup!
+    public SpriteRenderer playerHealthUI;
+    public SpriteRenderer witchHealthUI;
 
-    public void OpenCardMenu() { if(gameActive) cardMenuPanel.SetActive(true); }
-    public void CloseCardMenu() { cardMenuPanel.SetActive(false); }
-
-    public void PlayAttackCard()
+    public void DamagePlayer(int amount)
     {
-        if (!gameActive) return;
-        playerAnim.SetTrigger("Attack");
-        witchHealth--;
-        UpdateUI();
-        CloseCardMenu();
+        playerHealth -= amount;
+        if (playerHealth < 0) playerHealth = 0;
+        UpdateHealthBars();
+        if (playerHealth == 0) Debug.Log("Witch Wins!");
     }
 
-    public void PlayDefenseCard(int typeIndex)
+    public void DamageWitch(int amount)
     {
-        if (!gameActive) return;
-        activePlayerDefense = (SpellType)typeIndex;
-        playerAnim.SetTrigger("Defend");
-        CloseCardMenu();
+        witchHealth -= amount;
+        if (witchHealth < 0) witchHealth = 0;
+        UpdateHealthBars();
+        if (witchHealth == 0) Debug.Log("Player Wins!");
     }
 
-    public void ReceiveWitchSpell(SpellType incomingType)
+    void UpdateHealthBars()
     {
-        if (activePlayerDefense == incomingType)
-        {
-            Debug.Log("PERFECT BLOCK!");
-        }
-        else
-        {
-            Debug.Log("HIT! Element: " + incomingType);
-            playerHealth--;
-            UpdateUI();
-        }
-        activePlayerDefense = SpellType.None; // Defense resets after spell passes
-    }
-
-    void UpdateUI()
-    {
-        playerHealth = Mathf.Clamp(playerHealth, 0, 6);
-        witchHealth = Mathf.Clamp(witchHealth, 0, 6);
-
-        playerHealthUI.sprite = healthBarSprites[playerHealth];
-        witchHealthUI.sprite = healthBarSprites[witchHealth];
-
-        if (witchHealth <= 0) EndGame("Victory! The Witch is defeated.");
-        if (playerHealth <= 0) EndGame("Defeat... You have fallen.");
-    }
-
-    void EndGame(string message)
-    {
-        Debug.Log(message);
-        gameActive = false;
-        FindObjectOfType<WitchController>().StopAllCoroutines();
+        // Safety checks added so it never crashes!
+        if (playerHealthUI != null) playerHealthUI.sprite = healthBarImages[playerHealth];
+        if (witchHealthUI != null) witchHealthUI.sprite = healthBarImages[witchHealth];
     }
 }

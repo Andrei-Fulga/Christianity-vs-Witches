@@ -2,34 +2,35 @@ using UnityEngine;
 
 public class SpellProjectile : MonoBehaviour
 {
-    public float speed = 6f;
-    private SpellType type;
-    private Animator anim;
-
-    void Awake() { anim = GetComponent<Animator>(); }
-
-    public void Setup(SpellType incomingType)
-    {
-        type = incomingType;
-        
-        // Play the clip name exactly as you named them in the Animation window
-        switch (type)
-        {
-            case SpellType.Fire: anim.Play("Spell_Fire"); break;
-            case SpellType.Water: anim.Play("Spell_Water"); break;
-            case SpellType.Earth: anim.Play("Spell_Earth"); break;
-            case SpellType.Lightning: anim.Play("Spell_Lightning"); break;
-        }
-    }
+    public float speed = 0.13974f; 
+    public PlayerController.DefenseType spellType;
 
     void Update()
     {
         transform.Translate(Vector3.left * speed * Time.deltaTime);
+    }
 
-        // Assuming Player is at X = -7
-        if (transform.position.x <= -7.5f)
+    void OnTriggerEnter2D(Collider2D other)
+    {
+        if (other.CompareTag("Player"))
         {
-            GameManager.Instance.ReceiveWitchSpell(type);
+            PlayerController player = other.GetComponent<PlayerController>();
+            
+            // Safety check: Make sure it actually found Constantine
+            if (player != null) 
+            {
+                if (player.currentDefense == spellType)
+                {
+                    Debug.Log("Spell Blocked! Player survives.");
+                    player.currentDefense = PlayerController.DefenseType.None; 
+                    player.GetComponent<Animator>().Play("Idle"); 
+                }
+                else
+                {
+                    Debug.Log("Player Hit! Wrong or no defense.");
+                    FindObjectOfType<GameManager>().DamagePlayer(1);
+                }
+            }
             Destroy(gameObject);
         }
     }

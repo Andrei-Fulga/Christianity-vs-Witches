@@ -1,33 +1,43 @@
 using UnityEngine;
-using System.Collections;
 
 public class WitchController : MonoBehaviour
 {
-    public GameObject spellPrefab;
+    public GameObject[] spellPrefabs; // 0=Fire, 1=Water, 2=Earth, 3=Lightning
     public Transform castPoint;
-    public Animator witchAnim;
+    private Animator anim;
+    
+    // NEW: Control the random timing directly in the Unity Inspector!
+    public float minTimeBetweenSpells = 5.0f;
+    public float maxTimeBetweenSpells = 8.0f;
+    
+    private float attackTimer;
 
-    void Start() { StartCoroutine(AttackRoutine()); }
-
-    IEnumerator AttackRoutine()
+    void Start()
     {
-        while (GameManager.Instance.gameActive)
+        anim = GetComponent<Animator>();
+        // Set the very first delay when the game starts
+        attackTimer = Random.Range(minTimeBetweenSpells, maxTimeBetweenSpells);
+    }
+
+    void Update()
+    {
+        attackTimer -= Time.deltaTime;
+        if (attackTimer <= 0)
         {
-            // Wait between attacks
-            yield return new WaitForSeconds(Random.Range(3.5f, 5.5f));
-
-            // Pick a random element (1=Fire, 2=Water, 3=Earth, 4=Lightning)
-            SpellType nextSpell = (SpellType)Random.Range(1, 5);
-
-            // 1. Play the specific color-burst animation (The "Tell")
-            witchAnim.SetTrigger(nextSpell.ToString());
-
-            // 2. Wait for the channeling animation to reach the "blast" moment
-            yield return new WaitForSeconds(0.9f);
-
-            // 3. Fire the projectile
-            GameObject bolt = Instantiate(spellPrefab, castPoint.position, Quaternion.identity);
-            bolt.GetComponent<SpellProjectile>().Setup(nextSpell);
+            CastRandomSpell();
+            
+            // Pick a new random time for the NEXT spell
+            attackTimer = Random.Range(minTimeBetweenSpells, maxTimeBetweenSpells); 
         }
+    }
+
+    void CastRandomSpell()
+    {
+        int spellIndex = Random.Range(0, 4);
+        anim.Play("Attack" + spellIndex); // Trigger specific elemental animation
+        
+        // Spawn the spell
+        GameObject spell = Instantiate(spellPrefabs[spellIndex], castPoint.position, Quaternion.identity);
+        spell.GetComponent<SpellProjectile>().spellType = (PlayerController.DefenseType)(spellIndex + 1);
     }
 }
